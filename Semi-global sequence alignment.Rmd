@@ -1,5 +1,5 @@
 ---
-title: "MathBiolAssessedPractical3_cs2087"
+title: "Performing Semi-global Sequence Alignment"
 author: "Colleen Sheridan"
 date: "20/05/2021"
 output: html_document
@@ -155,7 +155,6 @@ DP_nt <- function(match_score,mismatch_score,gap_score,sequence_1,sequence_2)
   
   
   # Regex command checking if character in either sequence is alphabetic
-  # This feature is not fully implemented yet, hence the difference between the expected result on the final example. However, correct implementation of this method, using regex to search for alphabetic characters would solve the solution. In addition to this, this method would need to include ways to exclude long tails of "-" from the sequences.
   index  = 1
   while(!(grepl("^[A-Za-z]+$", alnseq1[index], perl = T))|!(grepl("^[A-Za-z]+$", alnseq2[index], perl = T))  ){
     alnseq1 = alnseq1[-index]
