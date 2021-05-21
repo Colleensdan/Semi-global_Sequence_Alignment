@@ -1,0 +1,196 @@
+---
+title: "MathBiolAssessedPractical3_cs2087"
+author: "Colleen Sheridan"
+date: "20/05/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Code Summary
+
+My algorithm finds the traceback prioritising the maximum value with a larger index (i.e. further on the right if it is a row, or lower if it is found on a column)
+
+
+```{r }
+DP_nt <- function(match_score,mismatch_score,gap_score,sequence_1,sequence_2)
+{
+  # Length of input sequences.
+  len_seq1 = nchar(sequence_1)
+  len_seq2 = nchar(sequence_2)
+  # Convert sequences into vectors, one character per entry.
+  seq1 <- vector(mode="character", length=len_seq1)
+  for (i in 1:len_seq1)
+  {
+    seq1[i] <- substr(sequence_1,i,i)
+  }
+  
+  seq2 <- vector(mode="character", length=len_seq2)
+  for (i in 1:len_seq2)
+  {
+    seq2[i] <- substr(sequence_2,i,i)
+  }
+  # Initialize matrices to 0.
+  # The DP matrix contains the scores.
+  DPmatrix <- matrix(0,len_seq2+1,len_seq1+1)
+  # The traceback matrices contain information about how we got to each cell.
+  traceback_v <- matrix(0,len_seq2+1,len_seq1+1)
+  traceback_h <- matrix(0,len_seq2+1,len_seq1+1)
+  traceback_d <- matrix(0,len_seq2+1,len_seq1+1)
+  # Initialize the first row and first column of the arrays.
+  DPmatrix[1,1] = 0
+  for (i in 1:len_seq1)
+  {
+    DPmatrix[1,i+1] = 0
+    traceback_h[1,i+1] = 1 # check what does this line do, it works with both 1, 0
+  }
+
+  for (j in 1:len_seq2)
+  {
+    DPmatrix[j+1,1] = 0
+    traceback_v[j+1,1] = 1
+  }
+  # Fill out the rest of the matrix.
+ 
+  for (i in 1:len_seq1)
+  {
+    for (j in 1:len_seq2)
+    { 
+      if (seq1[i] == seq2[j])
+      {
+        s_ji = match_score
+      } else {
+        s_ji = mismatch_score
+      }
+      horizontal_score = DPmatrix[j+1,i] + gap_score
+      vertical_score = DPmatrix[j,i+1] + gap_score
+      diagonal_score = DPmatrix[j,i] + s_ji
+      max_score = max(c(vertical_score, horizontal_score,
+                        diagonal_score))
+      DPmatrix[j+1,i+1] = max_score
+      if (max_score == vertical_score)
+      {
+        traceback_v[j+1,i+1] = 1
+      }
+      if (max_score == horizontal_score)
+      {
+        traceback_h[j+1,i+1] = 1
+        9
+      }
+      if (max_score == diagonal_score)
+      {
+        traceback_d[j+1,i+1] = 1
+      }
+    }}
+
+  # Initialize aligned sequence vectors.
+  alnseq1 <- vector(mode="character", length=len_seq1+len_seq2)
+  alnseq2 <- vector(mode="character", length=len_seq1+len_seq2)
+  # Perform traceback to get the optimal alignment.
+  alnpos = len_seq1 + len_seq2
+  
+  last_row = c(DPmatrix[len_seq2,])
+  last_col = c(DPmatrix[,len_seq1])
+  
+  
+  # Searches for the largest value in the last row or column. Prioritises longer sequences if there are two identical values
+  finished = FALSE
+  
+  s1=len_seq2
+  s2=len_seq1
+  max = DPmatrix[s1,s2]
+  maxi = s1
+  maxj = s2
+  while (!finished){
+    
+    # find surrounding cells
+    val1 = DPmatrix[s1,s2-1]
+    val2 = DPmatrix[s1-1,s2]
+
+    if (val1>max|val2>max){
+      
+    if (val1>val2){
+      max = val1
+      maxi = s1
+      maxj=s2-1
+    } else{
+      max = val2
+      maxi = s1-1
+      maxj = s2
+    }
+    }
+    s1 = s1-1
+    s2 = s2-1
+    
+    if (s1==1 | s2==1){
+      finished = TRUE
+    }
+    }
+  
+  i0 = maxj
+  j0 = maxi
+  while (i0 >= 0 && j0 >= 0)
+  {
+    if (1 == traceback_d[j0+1,i0+1])
+    {
+      alnseq1[alnpos] = seq1[i0]
+      alnseq2[alnpos] = seq2[j0]
+      i0 = i0 - 1
+      j0 = j0 - 1
+    } else if (1 == traceback_h[j0+1,i0+1]) {
+      alnseq1[alnpos] = seq1[i0]
+      alnseq2[alnpos] = "-"
+      i0 = i0 - 1
+    } else if (1 == traceback_v[j0+1,i0+1]) {
+      alnseq1[alnpos] = "-"
+      alnseq2[alnpos] = seq2[j0]
+      j0 = j0 - 1
+    } else {
+      break
+    }
+    alnpos = alnpos - 1
+  }
+  
+  
+  # Regex command checking if character in either sequence is alphabetic
+  # This feature is not fully implemented yet, hence the difference between the expected result on the final example. However, correct implementation of this method, using regex to search for alphabetic characters would solve the solution. In addition to this, this method would need to include ways to exclude long tails of "-" from the sequences.
+  index  = 1
+  while(!(grepl("^[A-Za-z]+$", alnseq1[index], perl = T))|!(grepl("^[A-Za-z]+$", alnseq2[index], perl = T))  ){
+    alnseq1 = alnseq1[-index]
+    alnseq2 = alnseq2[-index]
+    }
+  
+  # Write out alignment.
+  print(paste(alnseq1,collapse = ""))
+  print(paste(alnseq2,collapse = ""))
+}
+
+```
+
+## Example Results
+
+```{r}
+DP_nt(1,-1,-2,"CTTCACACTCAAAGGCGGTGCACCAACAAAGGTTACTTTTGGTGATGACACTGTGATAGA",
+"CCTACTTTGTTCAGACTCAAAGGTGGTGCGCCTCCCAAAGGAGTTAAGTTTGGTGGCGAA")
+
+DP_nt(1,-1,-2,"CTTCACACTCAAAGGCGGTGCACCAACAAAGGTTACTTTTGGTGATGACACTGTGATAGA",
+"AGGTGCCCCTACAAAGGGAGTCACATTTGGTGAAGACACAGTTGTGGAAATCCAGGGTTA")
+
+DP_nt(1,-1,-1,"CTTCACACTCAAAGGCGGTGCACCAACAAAGGTTACTTTTGGTGATGACACTGTGATAGA",
+"AGGTGCCCCTACAAAGGGAGTCACATTTGGTGAAGACACAGTTGTGGAAATCCAGGGTTA")
+
+DP_nt(1,-2,-1,"CTTCACACTCAAAGGCGGTGCACCAACAAAGGTTACTTTTGGTGATGACACTGTGATAGA",
+ "AGGTGCCCCTACAAAGGGAGTCACATTTGGTGAAGACACAGTTGTGGAAATCCAGGGTTA")
+
+```
+
+# Test Results
+
+```{r}
+DP_nt(1,-2,-1,"GGTAATG", "CTAGTGTT")
+DP_nt(1,-2,-1,"GGGGGGCTCCAAGCCCAGAACACCAAGGGGCCCAAAAA", "CTCCGACCCAGCACCACGTGGC")
+DP_nt(1,-2,-1,"ATGGAGAGCCTTGTCCCTGGTTTCAACGAGAAAACACACGTCCTC", "GTCCCCGGGTTTAATGAGAGGACTCATGTCCTCCTCAGTTTGCCTGTT")
+DP_nt(1,-2,-1,"ATGGAGAGCCTTGTCCCTGGTTTCAACGAGAAAACACACGTCCTC", "GTCCCCGGGTTTAATGAGAGGACTCATGTCCTCCTCAGTTTGCCTGTT")
+```
